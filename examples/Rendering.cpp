@@ -7,8 +7,8 @@ int main() {
 
     //load 3d objects
     //should be relative paths
-    import_obj("Cat.obj","/home/drschizo/Documents/Programming/c++/ncurses-engine/ncurses-engine/obj-files/");
-    import_ppm("Cat.ppm","/home/drschizo/Documents/Programming/c++/ncurses-engine/ncurses-engine/obj-files/");
+    import_obj("File.obj","/relative_path/");
+    import_ppm("File.ppm","/relative_path/");
 
     //push back model, so it's not inside of you
     objects[0].trans[7]=60;

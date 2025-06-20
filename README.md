@@ -19,7 +19,6 @@ Ease of use is what this project is all about.
   - Boost library
   
 ## License Considerations
-This project currently doesn't have an explicit license. As a high school student, I'm still learning about FOSS licensing. I'm aware that some code might be problematic in terms of:
 
 License compliance:
 

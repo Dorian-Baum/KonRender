@@ -17,7 +17,12 @@ Ease of use is what this project is all about.
   - Ncurses library
   - SDL2 library
   - Boost library
-  
+
+## Compilation
+
+these are my compiler flags, that I use:
+  - g++ -O example.cpp -lncurses -lSDL2 -pthread -march=native -msse2 -fexpensive-optimizations -fomit-frame-pointer -flto  
+
 ## License Considerations
 
 License compliance:

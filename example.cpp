@@ -7,8 +7,8 @@ int main() {
 
     //load 3d objects
     //should be relative paths
-    import_obj("File.obj","/relative_path/");
-    import_ppm("File.ppm","/relative_path/");
+    import_obj("objects/Cube.obj","/your_path/");
+    import_ppm("objects/Cube.ppm","/your_path/");
 
     //push back model, so it's not inside of you
     objects[0].trans[7]=60;

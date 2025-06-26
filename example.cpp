@@ -32,7 +32,7 @@ int main() {
         }
 
         // Create screen string from depth and colour buffers
-        draw_screen(screen);
+        draw_screen();
 
         // As the Name suggests
         stats_4nerds();

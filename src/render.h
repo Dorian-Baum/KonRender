@@ -72,20 +72,24 @@ inline void render_tris(const int tris_amount, const int start,int which,float* 
     float Gvec[3];
     float intersect[3];
     for (int i = 0; i < tris_amount; i++) {
-        for (int t=0;t<3;t++){
-        float* vert= &objects[which].vert[start+i*9+t*3];
         float* uv=&objects[which].uv[i*6+start*6/9];
+        memcpy(&tris[0],&objects[which].vert[start+i*9],sizeof(float)*9);
 
-        tris[t*3+0]  = vert[0] * objects[which].trans[0];
-        tris[t*3+1]  = vert[1] * objects[which].trans[1];
-        tris[t*3+2]  = vert[2] * objects[which].trans[2];
+        rot_3d(tris[0],tris[1],tris[2], objects[which].trans[3],objects[which].trans[5],objects[which].trans[4]);
+        rot_3d(tris[3],tris[4],tris[5], objects[which].trans[3],objects[which].trans[5],objects[which].trans[4]);
+        rot_3d(tris[6],tris[7],tris[8], objects[which].trans[3],objects[which].trans[5],objects[which].trans[4]);
 
-        rot_3d(tris[0 + t*3],tris[1 + t*3],tris[2 + t*3], objects[which].trans[3],objects[which].trans[5],objects[which].trans[4]);
+        tris[0]  +=  objects[which].trans[6]-cam.data[3];
+        tris[1]  +=  objects[which].trans[7]-cam.data[4];
+        tris[2]  +=  objects[which].trans[8]-cam.data[5];
 
-        tris[0 + t*3]  +=  objects[which].trans[6]-cam.data[3];
-        tris[1 + t*3]  +=  objects[which].trans[7]-cam.data[4];
-        tris[2 + t*3]  +=  objects[which].trans[8]-cam.data[5];
-        }
+        tris[3]  +=  objects[which].trans[6]-cam.data[3];
+        tris[4]  +=  objects[which].trans[7]-cam.data[4];
+        tris[5]  +=  objects[which].trans[8]-cam.data[5];
+
+        tris[6]  +=  objects[which].trans[6]-cam.data[3];
+        tris[7]  +=  objects[which].trans[7]-cam.data[4];
+        tris[8]  +=  objects[which].trans[8]-cam.data[5];
 
         rot_3d(tris[0],tris[1],tris[2], cam.data[0],cam.data[1],cam.data[2]);
         rot_3d(tris[3],tris[4],tris[5], cam.data[0],cam.data[1],cam.data[2]);

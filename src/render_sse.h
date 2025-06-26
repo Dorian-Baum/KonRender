@@ -6,6 +6,7 @@
 
 using namespace std;
 
+
 //converts sse data to normal data
 inline void convert_mm(float tris[36], __m128 ax,__m128 ay,__m128 az, __m128 bx,__m128 by,__m128 bz, __m128 cx,__m128 cy,__m128 cz,
                              __m128 Nvec_x,__m128 Nvec_y,__m128 Nvec_z,__m128 Npoint_x,__m128 Npoint_y,__m128 Npoint_z,float Nvec[4][3],float Npoint[4][3]){
@@ -92,7 +93,7 @@ __m128 cull(__m128 fov, __m128 ay, __m128 by, __m128 cy) {
     return _mm_and_ps(mask, _mm_set1_ps(1.0f));
 }
 //sse render triangles
-inline void render_tris_sse(int tris_amount, int start, int which,int thread_id) {
+inline void render_tris_sse(int tris_amount, int start, int which, float* depth_buffer,int* colour_buffer) {
 
     int colour[3];
     int scr_size = cam.data[6]*cam.data[7];
@@ -271,7 +272,10 @@ inline void render_tris_sse(int tris_amount, int start, int which,int thread_id)
 
                     if (pixel_index >= 0 && pixel_index < scr_size&&temp<depth_buffer[pixel_index]) {
                         depth_buffer[pixel_index]=temp;
-                        colour_buffer[pixel_index]=find_texture(&textures[objects[which].text_p].texture[0],&uv[a*6],w1,w2,textures[objects[which].text_p].dim_x,textures[objects[which].text_p].dim_y);
+                        find_texture_rgb(&textures[objects[which].text_p].texture[0],&objects[which].uv[i*24+a*6+start*6/9],w1,w2,
+                                          textures[objects[which].text_p].dim_x,textures[objects[which].text_p].dim_y,colour);
+
+                        memcpy(&colour_buffer[pixel_index*3],colour,3*sizeof(int));
                     }
                 }
             }
@@ -281,37 +285,42 @@ inline void render_tris_sse(int tris_amount, int start, int which,int thread_id)
 }
 
 //mulit threaded sse rendering
+//hyperthread the rendering
 inline void render_tris_acell_sse(int o) {
 
-        int tris_per_thread = ((int)(objects[o].vert.size() / 9 / thread_numb/4))*4;
-        int overflow_tris = objects[o].vert.size()/9 -tris_per_thread*thread_numb;
+        int tris_per_thread = objects[o].vert.size() / 9 / thread_numb;
+        int overflow_tris = objects[o].vert.size() / 9 % thread_numb;
 
-        vector<int*> colour_buffs;
-        vector<float*> depth_buffs;
         vector<thread> thread_pool;
+
+        if (winsize_change){
+            for (int i = 0; i < thread_numb; i++) {
+                depth_buffs[i].resize(cam.data[6] * cam.data[7]);
+                colour_buffs[i].resize(cam.data[6] * cam.data[7]*3);
+            }
+            winsize_change=false;
+        }
+
         for (int i = 0; i < thread_numb; i++) {
 
-            depth_buffs.emplace_back((float*) malloc(cam.data[6] * cam.data[7] * sizeof(float)));
-            fill_n(depth_buffs[i] , cam.data[6] * cam.data[7], INFINITY);
-            colour_buffs.emplace_back((int*)  malloc(cam.data[6] * cam.data[7] * sizeof(int)));
-            fill_n(colour_buffs[i], cam.data[6] * cam.data[7], 216);
+            std::fill(depth_buffs[i].begin(), depth_buffs[i].end(), INFINITY);
+            std::fill(colour_buffs[i].begin(), colour_buffs[i].end(), 216);
 
-            thread_pool.emplace_back(render_tris_sse, tris_per_thread, (tris_per_thread) * 9 * i,o,i);
+            thread_pool.emplace_back(render_tris_sse, tris_per_thread, tris_per_thread * 9 * i,o,&depth_buffs[i][0],&colour_buffs[i][0]);
         }
-        render_tris(overflow_tris,objects[o].vert.size()/9-overflow_tris,o,depth_buffer,colour_buffer);
+
+        render_tris(overflow_tris,tris_per_thread*thread_numb*9,o,depth_buffer,colour_buffer);
+
         // Wait for completion
         for (int i=0;i<thread_numb;i++){
             thread_pool[i].join();
             for (int x=0;x<cam.data[6]*cam.data[7];x++){
                 if(depth_buffs[i][x]<depth_buffer[x]){
                     depth_buffer[x]=depth_buffs[i][x];
-                    colour_buffer[x]=colour_buffs[i][x];
+                    memcpy(&colour_buffer[x*3],&colour_buffs[i][x*3],3*sizeof(int));
                 }
             }
         }
-
-    for (auto ptr : depth_buffs) free(ptr);
-    for (auto ptr : colour_buffs) free(ptr);
 }
 
 

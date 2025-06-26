@@ -48,20 +48,11 @@ return w1>=0&&w2>=0&&(w1+w2)<=1;
 
 //finds the texture of a point relative to a given triange and uv
 //affine texture issue
-inline int find_texture(const int* texture,const float uv[6],const float w1, const float w2,const int dim_x,const int dim_y){
-    float u = uv[0] + w1 * (uv[2] - uv[0]) + w2 * (uv[4] - uv[0]);
-    float v = 1.0f - (uv[1] + w1*(uv[3]-uv[1]) + w2*(uv[5]-uv[1]));
-    int px = (static_cast<int>(u * (dim_x - 1)))%dim_x;
-    int py = (static_cast<int>(v * (dim_y - 1)))%dim_y;
-    int location = (py * dim_x + px);
-    return texture[location];
-}
-
 inline void find_texture_rgb(const int* texture,const float uv[6],const float w1, const float w2,const int dim_x,const int dim_y,int colour[3]){
     float u = uv[0] + w1 * (uv[2] - uv[0]) + w2 * (uv[4] - uv[0]);
     float v = 1.0f - (uv[1] + w1*(uv[3]-uv[1]) + w2*(uv[5]-uv[1]));
-    int px = (static_cast<int>(u * (dim_x - 1)))%dim_x;
-    int py = (static_cast<int>(v * (dim_y - 1)))%dim_y;
+    int px = (int)(u * (dim_x-1)) & (dim_x-1);
+    int py = (int)(v * (dim_y-1)) & (dim_y-1);
     int location = (py * dim_x + px)*3;
 
     colour[0]=texture[location];

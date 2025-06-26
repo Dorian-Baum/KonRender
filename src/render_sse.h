@@ -99,25 +99,25 @@ inline void render_tris_sse(int tris_amount, int start, int which, float* depth_
     int scr_size = cam.data[6]*cam.data[7];
     float aspect = cam.data[6]/cam.data[7]/2;
 
-    __m128 aspects = _mm_setr_ps(aspect,aspect,aspect,aspect);
+    __m128 aspects = _mm_set1_ps(aspect);
     float tris[36];
     float w1,w2;
 
-    __m128 obj_size_X = _mm_set_ps(objects[which].trans[0],objects[which].trans[0],objects[which].trans[0],objects[which].trans[0]);
-    __m128 obj_size_Y = _mm_set_ps(objects[which].trans[1],objects[which].trans[1],objects[which].trans[1],objects[which].trans[1]);
-    __m128 obj_size_Z = _mm_set_ps(objects[which].trans[2],objects[which].trans[2],objects[which].trans[2],objects[which].trans[2]);
+    __m128 obj_size_X = _mm_set1_ps(objects[which].trans[0]);
+    __m128 obj_size_Y = _mm_set1_ps(objects[which].trans[1]);
+    __m128 obj_size_Z = _mm_set1_ps(objects[which].trans[2]);
 
-    __m128 obj_pos_X  = _mm_set_ps(objects[which].trans[6],objects[which].trans[6],objects[which].trans[6],objects[which].trans[6]);
-    __m128 obj_pos_Y  = _mm_set_ps(objects[which].trans[7],objects[which].trans[7],objects[which].trans[7],objects[which].trans[7]);
-    __m128 obj_pos_Z  = _mm_set_ps(objects[which].trans[8],objects[which].trans[8],objects[which].trans[8],objects[which].trans[8]);
+    __m128 obj_pos_X  = _mm_set1_ps(objects[which].trans[6]);
+    __m128 obj_pos_Y  = _mm_set1_ps(objects[which].trans[7]);
+    __m128 obj_pos_Z  = _mm_set1_ps(objects[which].trans[8]);
 
 
-    __m128 cam_pos_X  = _mm_set_ps(cam.data[3],cam.data[3],cam.data[3],cam.data[3]);
-    __m128 cam_pos_Y  = _mm_set_ps(cam.data[4],cam.data[4],cam.data[4],cam.data[4]);
-    __m128 cam_pos_Z  = _mm_set_ps(cam.data[5],cam.data[5],cam.data[5],cam.data[5]);
+    __m128 cam_pos_X  = _mm_set1_ps(cam.data[3]);
+    __m128 cam_pos_Y  = _mm_set1_ps(cam.data[4]);
+    __m128 cam_pos_Z  = _mm_set1_ps(cam.data[5]);
 
-    __m128 cam_opening_X = _mm_set_ps(cam.data[6],cam.data[6],cam.data[6],cam.data[6]);
-    __m128 cam_opening_Y = _mm_set_ps(cam.data[7],cam.data[7],cam.data[7],cam.data[7]);
+    __m128 cam_opening_X = _mm_set1_ps(cam.data[6]);
+    __m128 cam_opening_Y = _mm_set1_ps(cam.data[7]);
 
     __m128 ax,ay,az,
            bx,by,bz,
@@ -215,35 +215,14 @@ inline void render_tris_sse(int tris_amount, int start, int which, float* depth_
         by = _mm_mul_ps(by,cam_fov);
         cy = _mm_mul_ps(cy,cam_fov);
 
+        ax= _mm_div_ps(ax,ay);
+        ay= _mm_div_ps(az,ay);
+        az= _mm_div_ps(bx,by);
+        bx= _mm_div_ps(bz,by);
+        by= _mm_div_ps(cx,cy);
+        bz= _mm_div_ps(cz,cy);
+
         convert_mm(tris,ax,ay,az,bx,by,bz,cx,cy,cz,Nvec_x,Nvec_y,Nvec_z,Npoint_x,Npoint_y,Npoint_z,Nvec,Npoint);
-
-        tris[0]=tris[0] /tris[1];
-        tris[1]=tris[2] /tris[1];
-        tris[2]=tris[3] /tris[4];
-        tris[3]=tris[5] /tris[4];
-        tris[4]=tris[6] /tris[7];
-        tris[5]=tris[8] /tris[7];
-
-        tris[0+9]=tris[0+9] /tris[1+9];
-        tris[1+9]=tris[2+9] /tris[1+9];
-        tris[2+9]=tris[3+9] /tris[4+9];
-        tris[3+9]=tris[5+9] /tris[4+9];
-        tris[4+9]=tris[6+9] /tris[7+9];
-        tris[5+9]=tris[8+9] /tris[7+9];
-
-        tris[0+18]=tris[0+18] /tris[1+18];
-        tris[1+18]=tris[2+18] /tris[1+18];
-        tris[2+18]=tris[3+18] /tris[4+18];
-        tris[3+18]=tris[5+18] /tris[4+18];
-        tris[4+18]=tris[6+18] /tris[7+18];
-        tris[5+18]=tris[8+18] /tris[7+18];
-
-        tris[0+27]=tris[0+27] /tris[1+27];
-        tris[1+27]=tris[2+27] /tris[1+27];
-        tris[2+27]=tris[3+27] /tris[4+27];
-        tris[3+27]=tris[5+27] /tris[4+27];
-        tris[4+27]=tris[6+27] /tris[7+27];
-        tris[5+27]=tris[8+27] /tris[7+27];
 
         for (int a=0;a<4;a++){
 

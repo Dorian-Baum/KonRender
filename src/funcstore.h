@@ -28,8 +28,12 @@ inline void init_custom_colors() {
                     g * 1000 / 5,
                     b * 1000 / 5
                 );
-                init_pair(idx, COLOR_BLACK,idx);
             }
+        }
+    }
+    for (int i=0;i<216;i++){
+        for (int t=0;t<216;t++){
+            init_pair(16+t,16+ i,16+t+i*216);
         }
     }
 }

@@ -173,7 +173,10 @@ inline bool import_ppm(const std::string& filename,const std::string& pathto) {
     }
     vector<int> temp;
     for (int a=0;a<(text.texture.size()/3);a++){
-        temp.push_back(rgb_to_terminal_color(text.texture[a*3],text.texture[a*3+1],text.texture[a*3+2]));
+
+        temp.push_back(text.texture[a*3]);
+        temp.push_back(text.texture[a*3+1]);
+        temp.push_back(text.texture[a*3+2]);
     }
     text.texture=temp;
 

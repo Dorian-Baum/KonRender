@@ -57,6 +57,18 @@ inline int find_texture(const int* texture,const float uv[6],const float w1, con
     return texture[location];
 }
 
+inline void find_texture_rgb(const int* texture,const float uv[6],const float w1, const float w2,const int dim_x,const int dim_y,int colour[3]){
+    float u = uv[0] + w1 * (uv[2] - uv[0]) + w2 * (uv[4] - uv[0]);
+    float v = 1.0f - (uv[1] + w1*(uv[3]-uv[1]) + w2*(uv[5]-uv[1]));
+    int px = (static_cast<int>(u * (dim_x - 1)))%dim_x;
+    int py = (static_cast<int>(v * (dim_y - 1)))%dim_y;
+    int location = (py * dim_x + px)*3;
+
+    colour[0]=texture[location];
+    colour[1]=texture[location+1];
+    colour[2]=texture[location+2];
+}
+
 //culls all poligons behind me
 inline bool cull(const camera_3d cam,const float* verts){
 return (verts[1] > cam.data[8]) && (verts[4] > cam.data[8]) && (verts[7] > cam.data[8]);
@@ -138,8 +150,11 @@ inline void render_tris(const int tris_amount, const int start,int which,float* 
 
                     if (pixel_index >= 0 && pixel_index < scr_size&&temp<depth_buffer[pixel_index]) {
                         depth_buffer[pixel_index]=temp;
-                        colour_buffer[pixel_index]=find_texture(&textures[objects[which].text_p].texture[0],&objects[which].uv[i*6+start*6/9],w1,w2,
-                                                                textures[objects[which].text_p].dim_x,textures[objects[which].text_p].dim_y);
+
+                        find_texture_rgb(&textures[objects[which].text_p].texture[0],&objects[which].uv[i*6+start*6/9],w1,w2,
+                                          textures[objects[which].text_p].dim_x,textures[objects[which].text_p].dim_y,colour);
+
+                        memcpy(&colour_buffer[pixel_index*3],colour,3*sizeof(int));
                     }
                 }
             }
@@ -154,32 +169,34 @@ inline void render_tris_acell(int o) {
         int tris_per_thread = objects[o].vert.size() / 9 / thread_numb;
         int overflow_tris = objects[o].vert.size() / 9 % thread_numb;
 
-        vector<int*> colour_buffs;
-        vector<float*> depth_buffs;
         vector<thread> thread_pool;
+
+        if (winsize_change){
+            for (int i = 0; i < thread_numb; i++) {
+                depth_buffs[i].resize(cam.data[6] * cam.data[7]);
+                colour_buffs[i].resize(cam.data[6] * cam.data[7]*3);
+            }
+            winsize_change=false;
+        }
 
         for (int i = 0; i < thread_numb; i++) {
 
-            depth_buffs.emplace_back((float*) malloc(cam.data[6] * cam.data[7] * sizeof(float)));
-            fill_n(depth_buffs[i] , cam.data[6] * cam.data[7], INFINITY);
-            colour_buffs.emplace_back((int*)  malloc(cam.data[6] * cam.data[7] * sizeof(int)));
-            fill_n(colour_buffs[i], cam.data[6] * cam.data[7], 216);
+            std::fill(depth_buffs[i].begin(), depth_buffs[i].end(), INFINITY);
+            std::fill(colour_buffs[i].begin(), colour_buffs[i].end(), 216);
 
-            thread_pool.emplace_back(render_tris, tris_per_thread + (i < overflow_tris), (tris_per_thread + ((i-1) < overflow_tris)) * 9 * i,o,depth_buffs[i],colour_buffs[i]);
+            thread_pool.emplace_back(render_tris, tris_per_thread, tris_per_thread * 9 * i,o,&depth_buffs[i][0],&colour_buffs[i][0]);
         }
-
+        render_tris(overflow_tris,tris_per_thread*thread_numb*9,o,depth_buffer,colour_buffer);
         // Wait for completion
         for (int i=0;i<thread_numb;i++){
             thread_pool[i].join();
             for (int x=0;x<cam.data[6]*cam.data[7];x++){
                 if(depth_buffs[i][x]<depth_buffer[x]){
                     depth_buffer[x]=depth_buffs[i][x];
-                    colour_buffer[x]=colour_buffs[i][x];
+                    memcpy(&colour_buffer[x*3],&colour_buffs[i][x*3],3*sizeof(int));
                 }
             }
         }
-    for (auto ptr : depth_buffs) free(ptr);
-    for (auto ptr : colour_buffs) free(ptr);
 }
 
 #endif // RENDER_H_INCLUDED

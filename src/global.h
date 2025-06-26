@@ -37,6 +37,9 @@ SDL_Event event;
 //string, with darkness wramp, for shadows
 std::string shade = " .-:+*=?#&@";
 
+std::vector<std::vector<int>> colour_buffs;
+std::vector<std::vector<float>> depth_buffs;
+
 //self explanatory
 vec2d cur_pos;
 vec2d win_size;

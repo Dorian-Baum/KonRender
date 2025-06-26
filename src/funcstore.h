@@ -6,12 +6,10 @@
 
 using namespace std;
 
-//creates the colour cube used for RGB-termial conversion
 inline int rgb_to_terminal_color(int r, int g, int b) {
-    r*=0.019;
-    g*=0.019;
-    b*=0.019;
-
+    r = r * 6 / 256;
+    g = g * 6 / 256;
+    b = b * 6 / 256;
     return 16 + r * 36 + g * 6 + b;
 }
 
@@ -28,12 +26,8 @@ inline void init_custom_colors() {
                     g * 1000 / 5,
                     b * 1000 / 5
                 );
+                init_pair(idx,17,idx);
             }
-        }
-    }
-    for (int i=0;i<216;i++){
-        for (int t=0;t<216;t++){
-            init_pair(16+t,16+ i,16+t+i*216);
         }
     }
 }
@@ -64,22 +58,24 @@ inline void rot_3d(float& X, float& Y, float& Z, const float ax, const float ay,
 }
 
 //print screen from colour buffer
-inline void draw_screen(std::string& screen) {
-    for (int i = 0; i < screen.size(); i++) {
-        int shade_index = (boost::algorithm::clamp(static_cast<int>(depth_buffer[i] / 10), 0, 9))* (depth_buffer[i] != INFINITY);
-        screen[i] = shade[shade_index];
-
-        attron(COLOR_PAIR(colour_buffer[i]* (depth_buffer[i] != INFINITY)+ 232* (depth_buffer[i] == INFINITY|A_DIM)));
+inline void draw_screen() {
+    for (int i = 0; i < cam.data[6]*cam.data[7]; i++) {
+        int term_col = rgb_to_terminal_color(colour_buffer[i*3],colour_buffer[i*3+1],colour_buffer[i*3+2]);
+        attron(COLOR_PAIR((term_col* (depth_buffer[i] != INFINITY)+ 232* (depth_buffer[i] == INFINITY|A_DIM))));
         addch(' ');
     }
 }
+
 //draw a given texture on to screen
 //just for viewing textures
 inline void draw_texture(int which) {
     cam.data[2]=0;cam.data[0]=0;
     for (int y=0-cam.data[4]*10;y<cam.data[7]-cam.data[4]*10;y++){
         for (int x=0+cam.data[3]*10;x<cam.data[6]+cam.data[3]*10;x++){
-            attron(COLOR_PAIR(textures[which].texture[(y*textures[which].dim_x+x)]));
+            int term_col = rgb_to_terminal_color(textures[which].texture[(y*textures[which].dim_x+x)*3],
+                                                 textures[which].texture[(y*textures[which].dim_x+x)*3+1],
+                                                 textures[which].texture[(y*textures[which].dim_x+x)*3+2]);
+            attron(COLOR_PAIR(term_col));
             addch(' ');
         }
     }
@@ -89,25 +85,18 @@ inline void draw_texture(int which) {
 inline void controls(SDL_Event event,bool& quit){
     const Uint8 *key_state = SDL_GetKeyboardState(nullptr);
     float tempX=0;float tempY=0;
-    tempX-=key_state[SDL_SCANCODE_A];
-    tempX+=key_state[SDL_SCANCODE_D];
-
-    tempY-=key_state[SDL_SCANCODE_S];
-    tempY+=key_state[SDL_SCANCODE_W];
+    tempX+=key_state[SDL_SCANCODE_D]-key_state[SDL_SCANCODE_A];
+    tempY+=key_state[SDL_SCANCODE_W]-key_state[SDL_SCANCODE_S];
 
     rot_2d(tempX,tempY,-cam.data[2]);
 
-    cam.data[5] -= mv_speed*key_state[SDL_SCANCODE_SPACE];
-    cam.data[5] += mv_speed*key_state[SDL_SCANCODE_LSHIFT];
+    cam.data[5] += mv_speed*(key_state[SDL_SCANCODE_LSHIFT]-key_state[SDL_SCANCODE_SPACE]);
     cam.data[3] += tempX*mv_speed;
     cam.data[4] += tempY*mv_speed;
     //rotation control
-    cam.data[0]+=rot_speed*key_state[SDL_SCANCODE_I];
-    cam.data[0]-=rot_speed*key_state[SDL_SCANCODE_K];
-    cam.data[2]+=rot_speed*key_state[SDL_SCANCODE_L];
-    cam.data[2]-=rot_speed*key_state[SDL_SCANCODE_J];
-    cam.data[1]+=rot_speed*key_state[SDL_SCANCODE_O];
-    cam.data[1]-=rot_speed*key_state[SDL_SCANCODE_U];
+    cam.data[0]+=rot_speed*(key_state[SDL_SCANCODE_I]-key_state[SDL_SCANCODE_K]);
+    cam.data[2]+=rot_speed*(key_state[SDL_SCANCODE_L]-key_state[SDL_SCANCODE_J]);
+    cam.data[1]+=rot_speed*(key_state[SDL_SCANCODE_O]-key_state[SDL_SCANCODE_U]);
     quit = key_state[SDL_SCANCODE_Q];
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_MOUSEMOTION) {
@@ -116,10 +105,10 @@ inline void controls(SDL_Event event,bool& quit){
             cam.data[0] -= event.motion.yrel * rot_speed * 0.1f;
         }
     }
-    if (key_state[SDL_SCANCODE_F3]) {
-    settings[2] = !settings[2];  // Toggle the boolean value
-    // Optional: Add a small delay or wait for key release to prevent rapid toggling
-}
+
+    if(key_state[SDL_SCANCODE_F3]){
+    settings[2] = (!settings[2]);
+    }
 }
 
 //controls Ncurses based
@@ -154,7 +143,7 @@ char input = getch();
 //just like the youtube setting, it show useful information invoked with f3 (not usable with ncurses-controls)
 inline void stats_4nerds(){
 if(settings[2]){
-        attron(COLOR_PAIR(231));
+        attron(COLOR_PAIR(1));
         string temp = to_string((frametime[0]+frametime[1]+frametime[2]+frametime[4]+frametime[4]+frametime[5]+frametime[6]+frametime[7]+frametime[8]+frametime[9])/10/1000)+"ms";
         mvprintw(0,0,temp.c_str());
         temp="res: "+to_string(win_size.X)+" x "+to_string(win_size.Y);
@@ -172,7 +161,7 @@ if(settings[2]){
         mvprintw(4,0,temp.c_str());
         temp="uv amount: "+to_string(uv_am/6);
         mvprintw(5,0,temp.c_str());
-        temp="texture dim: x: "+to_string(textures[0].dim_x)+" y: "+to_string(textures[0].dim_y)+ " size:" +to_string(textures[0].texture.size());
+        temp="texture dim: x: "+to_string(textures[0].dim_x)+" y: "+to_string(textures[0].dim_y)+ " size:" +to_string(textures[0].texture.size()/3);
         mvprintw(6,0,temp.c_str());
 
         }
@@ -180,6 +169,8 @@ if(settings[2]){
 
 //initalise things needed for the library
 inline void innit_3d(){
+    depth_buffs.resize(thread_numb);
+    colour_buffs.resize(thread_numb);
 if (settings[0]){
     //sdl innit
     SDL_Init(SDL_INIT_VIDEO);
@@ -225,6 +216,7 @@ inline void input(){
 //gets called at the begining of your frame
 //screen resizing ,frame-sync and various buffer tasks
 inline void begin_frame(){
+
         //begin clock
         timer = chrono::high_resolution_clock::now();
 
@@ -242,12 +234,12 @@ inline void begin_frame(){
             cam.data[7] = win_size.Y;
 
             depth_buffer = (float*)malloc(cam.data[6] * cam.data[7] * sizeof(float));
-            colour_buffer = (int*)malloc(cam.data[6] * cam.data[7] * sizeof(int));
+            colour_buffer = (int*)malloc(3*cam.data[6] * cam.data[7] * sizeof(int));
 
             winsize_change = true;
         }
         fill_n(depth_buffer, cam.data[6] * cam.data[7], INFINITY);
-        fill_n(colour_buffer, cam.data[6] * cam.data[7], 216);
+        fill_n(colour_buffer, 3*cam.data[6] * cam.data[7], 216);
 }
 
 //called at the end of every frame

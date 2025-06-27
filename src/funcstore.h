@@ -59,16 +59,19 @@ inline void rot_3d(float& X, float& Y, float& Z, const float ax, const float ay,
 
 //print screen from colour buffer
 inline void draw_screen() {
+    timer_blit = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < cam.data[6]*cam.data[7]; i++) {
         int term_col = rgb_to_terminal_color(colour_buffer[i*3],colour_buffer[i*3+1],colour_buffer[i*3+2]);
         attron(COLOR_PAIR((term_col* (depth_buffer[i] != INFINITY)+ 232* (depth_buffer[i] == INFINITY|A_DIM))));
         addch(' ');
     }
+    frametime_blit[delta%10] += chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - timer_blit).count();
 }
 
 //draw a given texture on to screen
 //just for viewing textures
 inline void draw_texture(int which) {
+    timer_blit = std::chrono::high_resolution_clock::now();
     cam.data[2]=0;cam.data[0]=0;
     for (int y=0-cam.data[4]*10;y<cam.data[7]-cam.data[4]*10;y++){
         for (int x=0+cam.data[3]*10;x<cam.data[6]+cam.data[3]*10;x++){
@@ -79,6 +82,7 @@ inline void draw_texture(int which) {
             addch(' ');
         }
     }
+    frametime_blit[delta%10] += chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - timer_blit).count();
 }
 
 //Controls SDL2 based
@@ -144,12 +148,27 @@ char input = getch();
 inline void stats_4nerds(){
 if(settings[2]){
         attron(COLOR_PAIR(1));
-        string temp = to_string((frametime[0]+frametime[1]+frametime[2]+frametime[4]+frametime[4]+frametime[5]+frametime[6]+frametime[7]+frametime[8]+frametime[9])/10/1000)+"ms";
+        float temporary=0;
+        for(int i=0;i<10;i++){temporary+=frametime[i];}
+        string temp ="frametime: "+to_string(temporary/10000)+"ms";
         mvprintw(0,0,temp.c_str());
-        temp="res: "+to_string(win_size.X)+" x "+to_string(win_size.Y);
+
+        temporary=0;
+        for(int i=0;i<10;i++){temporary+=frametime_render[i];}
+        temp = "render time: "+to_string(temporary/10000)+"ms";
         mvprintw(1,0,temp.c_str());
-        temp="angle: "+to_string(cam.data[0])+to_string(cam.data[1])+to_string(cam.data[2]);
+
+        temporary=0;
+        for(int i=0;i<10;i++){temporary+=frametime_blit[i];}
+        temp = "blit time: "+to_string(temporary/10000)+"ms";
         mvprintw(2,0,temp.c_str());
+
+
+
+        temp="res: "+to_string(win_size.X)+" x "+to_string(win_size.Y);
+        mvprintw(5,0,temp.c_str());
+        temp="angle: "+to_string(cam.data[0])+to_string(cam.data[1])+to_string(cam.data[2]);
+        mvprintw(6,0,temp.c_str());
 
         int poly_am=0;
         int uv_am=0;
@@ -158,11 +177,11 @@ if(settings[2]){
             uv_am+=objects[i].uv.size();
         }
         temp="poly amount: "+to_string(poly_am/9);
-        mvprintw(4,0,temp.c_str());
+        mvprintw(7,0,temp.c_str());
         temp="uv amount: "+to_string(uv_am/6);
-        mvprintw(5,0,temp.c_str());
+        mvprintw(8,0,temp.c_str());
         temp="texture dim: x: "+to_string(textures[0].dim_x)+" y: "+to_string(textures[0].dim_y)+ " size:" +to_string(textures[0].texture.size()/3);
-        mvprintw(6,0,temp.c_str());
+        mvprintw(9,0,temp.c_str());
 
         }
 }
@@ -245,12 +264,20 @@ inline void begin_frame(){
 //called at the end of every frame
 //Makes ncurses print, creates avg framerate, sleeps and updates delta
 inline void end_frame(){
+
+        timer_render = std::chrono::high_resolution_clock::now();
         //blit screen
         refresh();
+
+        frametime_blit[delta%10] += chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - timer_blit).count();
+
+        delta++;
+
+        frametime_render[delta%10]=0;
+        frametime_blit[delta%10]=0;
         //timer stuffs
         auto frame_duration = chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - timer);
         frametime[delta % 10] = frame_duration.count();  // Convert to seconds
-        delta++;
         usleep(std::clamp(static_cast<int>(framedelay - frame_duration.count()), 0, framedelay));
         //empty screen
         clear();

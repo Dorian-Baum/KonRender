@@ -27,9 +27,6 @@ bool settings[3] = {1,0,1};
 //not yet used
 bool winsize_change=true;
 
-//to keep track of time
-auto timer=std::chrono::high_resolution_clock::now();
-
 //so we can disable SDL
 SDL_Window *window = nullptr;
 SDL_Event event;
@@ -47,6 +44,15 @@ float mv_speed = 0.5;
 float rot_speed = 0.009;
 bool quit = 0;
 int delta = 0;
-int framedelay=33333;
+
+//to keep track of time
+auto timer=std::chrono::high_resolution_clock::now();
+auto timer_render=std::chrono::high_resolution_clock::now();
+auto timer_blit=std::chrono::high_resolution_clock::now();
+
+float frametime_render[10]={0,0,0,0,0,0,0,0,0,0};
+float frametime_blit[10]={0,0,0,0,0,0,0,0,0,0};
 float frametime[10]={0,0,0,0,0,0,0,0,0,0};
+
+int framedelay=33333;
 #endif // GLOBAL_H_INCLUDED

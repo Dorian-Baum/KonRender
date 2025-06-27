@@ -85,9 +85,7 @@ inline void rot_3d(__m128& X, __m128& Y, __m128& Z, const float ax, const float 
 //sse culling
 __m128 cull(__m128 fov, __m128 ay, __m128 by, __m128 cy) {
     // Compute mask (all F's for true, 0 for false)
-    __m128 mask = _mm_and_ps(_mm_and_ps(_mm_cmpgt_ps(ay, fov),
-                                  _mm_cmpgt_ps(by, fov)),
-                        _mm_cmpgt_ps(cy, fov));
+    __m128 mask = _mm_and_ps(_mm_and_ps(_mm_cmpgt_ps(ay, fov), _mm_cmpgt_ps(by, fov)), _mm_cmpgt_ps(cy, fov));
 
     // Convert mask to 1.0f (true) or 0.0f (false)
     return _mm_and_ps(mask, _mm_set1_ps(1.0f));

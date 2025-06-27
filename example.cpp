@@ -6,9 +6,8 @@ int main() {
     innit_3d();
 
     //load 3d objects
-    //should be relative paths
-    import_obj("objects/Cube.obj","/your_path/");
-    import_ppm("objects/Cube.ppm","/your_path/");
+    import_obj("objects/Cube.obj","/yourpath/");
+    import_ppm("objects/Cube.ppm","/yourpath/");
 
     //push back model, so it's not inside of you
     objects[0].trans[7]=60;
@@ -20,15 +19,12 @@ int main() {
         // Screen-space handling
         begin_frame();
 
-        // Create a screen buffer
-        string screen(cam.data[6] * cam.data[7], ' ');
-
         // Transform objects
         objects[0].trans[5]+=0.01;
 
         // Render all objects
         for (int i=0;i<objects.size();i++){
-        render_tris_acell_sse(i);
+            render_tris_acell_sse(i);
         }
 
         // Create screen string from depth and colour buffers
@@ -39,6 +35,7 @@ int main() {
 
         // Same as name
         input();
+
         // Screen-space handling
         end_frame();
     }

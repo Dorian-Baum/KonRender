@@ -3,9 +3,15 @@
 
 #define thread_numb 16
 
-#include <ncurses.h>
 #include <SDL2/SDL.h>
 #include <chrono>
+
+//prolly defined in SDL2 or ncurses
+#undef border
+
+#include <ftxui/screen/screen.hpp>
+#include <ftxui/dom/elements.hpp>
+#include <ftxui/screen/color.hpp>
 
 #include "data_structures.h"
 
@@ -55,4 +61,10 @@ float frametime_blit[10]={0,0,0,0,0,0,0,0,0,0};
 float frametime[10]={0,0,0,0,0,0,0,0,0,0};
 
 int framedelay=33333;
+
+//ftxui
+auto screen = ftxui::Screen::Create(
+        ftxui::Dimension::Full(),   // Use full terminal width
+        ftxui::Dimension::Full()
+    );
 #endif // GLOBAL_H_INCLUDED

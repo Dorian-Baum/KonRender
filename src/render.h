@@ -9,8 +9,6 @@
 #include <ctime>
 #include <thread>
 
-#include "global.h"
-#include "data_structures.h"
 #include "funcstore.h"
 
 using namespace std;

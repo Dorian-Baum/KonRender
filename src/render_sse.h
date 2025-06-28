@@ -300,8 +300,8 @@ inline void render_tris_acell_sse(int o) {
 
     timer_render = std::chrono::high_resolution_clock::now();
 
-        int tris_per_thread = objects[o].vert.size() / 9 / thread_numb;
-        int overflow_tris = objects[o].vert.size() / 9 % thread_numb;
+        int tris_per_thread = objects[o].vert.size() / 9 / thread_numb/4*4;
+        int overflow_tris = objects[o].vert.size()/9 -tris_per_thread*thread_numb;
 
         vector<thread> thread_pool;
 

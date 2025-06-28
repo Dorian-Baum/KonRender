@@ -32,4 +32,5 @@ struct texture {
     int dim_x,dim_y;
 };
 
+
 #endif // DATA-STRUCTURES_H_INCLUDED

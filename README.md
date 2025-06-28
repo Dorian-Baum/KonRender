@@ -21,7 +21,7 @@ Ease of use is what this project is all about.
 ## Compilation
 
 these are my compiler flags, that I use:
-  - g++ -O example.cpp -lftxui-component -lftxui-dom -lftxui-screen -lSDL2 -pthread -march=native -msse2 -fexpensive-optimizations -fomit-frame-pointer -flto  
+  - g++ -O2 example.cpp -lftxui-component -lftxui-dom -lftxui-screen -lSDL2 -pthread -march=native -msse2 -fexpensive-optimizations -fomit-frame-pointer -flto  
 
 ## License Considerations
 

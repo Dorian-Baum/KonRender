@@ -7,7 +7,7 @@ Ease of use is what this project is all about.
 
   - Functional rendering
   - Textures 
-  - Input (invisible SDL2 window/ncurses fallback)
+  - Input (invisible SDL2 window)
   - OBJ importer
   - PPM importer
 

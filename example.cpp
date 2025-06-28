@@ -34,12 +34,10 @@ int main() {
         stats_4nerds();
 
         // Same as name
-        input();
+        controls();
 
         // Screen-space handling
         end_frame();
     }
-    //end ncurses
-    endwin();
     return 0;
 }

@@ -14,14 +14,14 @@ Ease of use is what this project is all about.
 ## Dependencies
 
   - C++ compiler
-  - Ncurses library
+  - FTXUI library
   - SDL2 library
   - Boost library
 
 ## Compilation
 
 these are my compiler flags, that I use:
-  - g++ -O example.cpp -lncurses -lSDL2 -pthread -march=native -msse2 -fexpensive-optimizations -fomit-frame-pointer -flto  
+  - g++ -O example.cpp -lftxui-component -lftxui-dom -lftxui-screen -lSDL2 -pthread -march=native -msse2 -fexpensive-optimizations -fomit-frame-pointer -flto  
 
 ## License Considerations
 

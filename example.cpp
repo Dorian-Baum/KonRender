@@ -6,8 +6,8 @@ int main() {
     innit_3d();
 
     //load 3d objects
-    import_obj("objects/Cat.obj","/home/drschizo/Documents/Programming/c++/KonRender/KonRender/");
-    import_ppm("objects/Cat.ppm","/home/drschizo/Documents/Programming/c++/KonRender/KonRender/");
+    import_obj("objects/Cube.obj","/yourpath/");
+    import_ppm("objects/Cube.ppm","/yourpath/");
 
     //define his texture
     objects[0].text_p=0;

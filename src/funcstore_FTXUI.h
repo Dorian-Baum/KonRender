@@ -43,12 +43,15 @@ inline void rot_3d(float& X, float& Y, float& Z, const float ax, const float ay,
 }
 
 //print screen from colour buffer
+//print screen from colour buffer
 inline void draw_screen() {
     timer_blit = std::chrono::high_resolution_clock::now();
     for (int y=0;y<cam.data[7];y++){
         for (int x=0;x<cam.data[6];x++){
         auto& pixel = screen.PixelAt(x, y);
-            pixel.background_color = ftxui::Color::RGB(colour_buffer[(int)(x+y*cam.data[6])*3],colour_buffer[(int)(x+y*cam.data[6])*3+1],colour_buffer[(int)(x+y*cam.data[6])*3+2]);
+            pixel.background_color = ftxui::Color::RGB(colour_buffer[(int)(x+y*cam.data[6])*3]/colour_clamper*colour_clamper,
+                                                       colour_buffer[(int)(x+y*cam.data[6])*3+1]/colour_clamper*colour_clamper,
+                                                       colour_buffer[(int)(x+y*cam.data[6])*3+2]/colour_clamper*colour_clamper);
     }}
     frametime_blit[delta%10] += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - timer_blit).count();
 }
@@ -66,9 +69,9 @@ inline void draw_texture(int which) {
             auto& pixel = screen.PixelAt(ax, ay);
             pixel.character = ' ';
             pixel.foreground_color = ftxui::Color::White;
-            pixel.background_color = ftxui::Color::RGB(textures[which].texture[(y*textures[which].dim_x+x)*3],
-                                                 textures[which].texture[(y*textures[which].dim_x+x)*3+1],
-                                                 textures[which].texture[(y*textures[which].dim_x+x)*3+2]);
+            pixel.background_color = ftxui::Color::RGB(colour_buffer[(int)(x+y*cam.data[6])*3]/colour_clamper*colour_clamper,
+                                                       colour_buffer[(int)(x+y*cam.data[6])*3+1]/colour_clamper*colour_clamper,
+                                                       colour_buffer[(int)(x+y*cam.data[6])*3+2]/colour_clamper*colour_clamper);
 
         }
     }

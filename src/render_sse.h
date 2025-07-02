@@ -249,20 +249,14 @@ inline void render_tris_sse(int tris_amount, int start, int which, float* depth_
         max_Y = _mm_mul_ps(_mm_add_ps(max_Y,_mm_set1_ps(1)),_mm_set1_ps(0.5*cam.data[7]));
 
         min_X = clamp(min_X,_mm_set1_ps(0),cam_opening_X);
-        max_X = clamp(max_X,_mm_set1_ps(0),cam_opening_X);
-        min_Y = clamp(min_Y,_mm_set1_ps(0),_mm_sub_ps(cam_opening_Y,_mm_set1_ps(1)));
+        max_X = clamp(max_X,_mm_set1_ps(0),_mm_sub_ps(cam_opening_X,_mm_set1_ps(1)));
+        min_Y = clamp(min_Y,_mm_set1_ps(0),cam_opening_Y);
         max_Y = clamp(max_Y,_mm_set1_ps(0),cam_opening_Y);
 
         convert_mm(tris,ax,ay,az,bx,by,bz,cx,cy,cz,Nvec_x,Nvec_y,Nvec_z,Npoint_x,Npoint_y,Npoint_z,Nvec,Npoint,
                    min_X,max_X,min_Y,max_Y,&bound_min_X[0],&bound_max_X[0],&bound_min_Y[0],&bound_max_Y[0]);
 
         for (int a=0;a<4;a++){
-
-        bound_min_X[a]=clamp((int)(bound_min_X[a]),0,(int)cam.data[6]);
-        bound_max_X[a]=clamp((int)(bound_max_X[a]),0,(int)cam.data[6]-1);
-
-        bound_min_Y[a]=clamp((int)(bound_min_Y[a]),0,(int)cam.data[7]);
-        bound_max_Y[a]=clamp((int)(bound_max_Y[a]),0,(int)cam.data[7]);
 
         // Iterate over pixel coordinates
         for (int y = bound_min_Y[a]; y <= bound_max_Y[a]; y++) {

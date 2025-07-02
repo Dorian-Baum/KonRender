@@ -9,7 +9,7 @@
 #include <ctime>
 #include <thread>
 
-#include "funcstore.h"
+#include "funcstore_FTXUI.h"
 
 using namespace std;
 

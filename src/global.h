@@ -3,6 +3,8 @@
 
 #define thread_numb 16
 
+#define ncurses 0
+
 #include <SDL2/SDL.h>
 #include <chrono>
 
@@ -45,7 +47,6 @@ std::vector<std::vector<float>> depth_buffs;
 
 //self explanatory
 vec2d cur_pos;
-vec2d win_size;
 float mv_speed = 0.5;
 float rot_speed = 0.009;
 bool quit = 0;

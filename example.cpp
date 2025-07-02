@@ -6,13 +6,14 @@ int main() {
     innit_3d();
 
     //load 3d objects
-    import_obj("objects/Cube.obj","/yourpath/");
-    import_ppm("objects/Cube.ppm","/yourpath/");
+    import_obj("objects/Cat.obj","/home/drschizo/Documents/Programming/c++/KonRender/KonRender/");
+    import_ppm("objects/Cat.ppm","/home/drschizo/Documents/Programming/c++/KonRender/KonRender/");
 
-    //push back model, so it's not inside of you
-    objects[0].trans[7]=60;
     //define his texture
     objects[0].text_p=0;
+
+    //push back camera, so that model is not inside you
+    cam.data[4]=-50;
 
     while (!quit) {
 
@@ -39,5 +40,6 @@ int main() {
         // Screen-space handling
         end_frame();
     }
+
     return 0;
 }

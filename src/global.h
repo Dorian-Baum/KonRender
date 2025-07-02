@@ -1,9 +1,7 @@
 #ifndef GLOBAL_H_INCLUDED
 #define GLOBAL_H_INCLUDED
 
-#define thread_numb 16
 
-#define ncurses 0
 
 #include <SDL2/SDL.h>
 #include <chrono>
@@ -16,6 +14,10 @@
 #include <ftxui/screen/color.hpp>
 
 #include "data_structures.h"
+
+int thread_numb=16;
+//clamps the colours to 256/colour_clamper per chanel
+int colour_clamper=32;
 
 //setting up data for optimization of functions
 std::vector<obj_3d> objects;

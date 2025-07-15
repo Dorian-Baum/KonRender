@@ -1,8 +1,6 @@
 #ifndef GLOBAL_H_INCLUDED
 #define GLOBAL_H_INCLUDED
 
-
-
 #include <SDL2/SDL.h>
 #include <chrono>
 
@@ -17,17 +15,19 @@
 
 int thread_numb=16;
 //clamps the colours to 256/colour_clamper per chanel
-int colour_clamper=32;
+int colour_clamper=8;
 
 //setting up data for optimization of functions
 std::vector<obj_3d> objects;
 std::vector<texture> textures;
+std::vector<point_light> point_lights;
 
 //the camera
 camera_3d cam;
 
 float* depth_buffer=nullptr;
 int* colour_buffer=nullptr;
+float* light_buffer=nullptr;
 
 //0 controls SDL/ncurses input
 //1 controls nothing so far
@@ -67,6 +67,11 @@ int framedelay=33333;
 
 //ftxui
 auto screen = ftxui::Screen::Create(
+        ftxui::Dimension::Full(),   // Use full terminal width
+        ftxui::Dimension::Full()
+    );
+
+auto screen_buffered = ftxui::Screen::Create(
         ftxui::Dimension::Full(),   // Use full terminal width
         ftxui::Dimension::Full()
     );

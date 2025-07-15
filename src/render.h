@@ -16,7 +16,7 @@ using namespace std;
 //intersection plane and straight
 //N is normalvector of plane and PL_P is point of plane
 //G is vector of stright and ST_P is point of straight
-inline void inter_pl_str(const float Nvec[3], const float Npoint[3], const float Gvec[3],float schnitt[3]){
+inline void intersection_plane_straight(const float Nvec[3], const float Npoint[3], const float Gvec[3],float schnitt[3]){
 //doubles as c and as r fom your formula
 float c = (Nvec[0]*Npoint[0]+Nvec[1]*Npoint[1]+Nvec[2]*Npoint[2])/(Gvec[0]*Nvec[0]+Gvec[1]*Nvec[1]+Gvec[2]*Nvec[2]);
 
@@ -25,15 +25,8 @@ schnitt[1]=c*Gvec[1];
 schnitt[2]=c*Gvec[2];
 }
 
-//crossproduct
-inline void cross_prod(const float aX,const float aY,const float aZ,const float bX,const float bY,const float bZ,float Nvec[3]){
-Nvec[0]=(aY*bZ-aZ*bY);
-Nvec[1]=(aZ*bX-aX*bZ);
-Nvec[2]=(aX*bY-aY*bX);
-}
-
 //finds out if a point is in a givent triangle
-inline bool in_trig_barricentric(const float px,const float py,const float trig[6],float& w1, float& w2){
+inline bool is_point_in_triangle(const float px,const float py,const float trig[6],float& w1, float& w2){
 
 float CYmAY = trig[5]-trig[1];
 
@@ -63,8 +56,12 @@ inline bool cull(const camera_3d cam,const float* verts){
 return (verts[1] > cam.data[8]) && (verts[4] > cam.data[8]) && (verts[7] > cam.data[8]);
 }
 
+inline bool cull_backface(const float* nvec,const float* verts){
+return (nvec[0]*verts[0]+nvec[1]*verts[1]+nvec[2]*verts[2])<0;
+}
+
 //render triangles
-inline void render_tris(const int tris_amount, const int start,int which,float* depth_buffer,int* colour_buffer) {
+inline void rasterise_tris(const int tris_amount, const int start,int which,float* depth_buffer,int* colour_buffer) {
     int scr_size = cam.data[6]*cam.data[7];
     float aspect = cam.data[6]/cam.data[7]/2;
     float tris[9];
@@ -76,9 +73,9 @@ inline void render_tris(const int tris_amount, const int start,int which,float* 
         float* uv=&objects[which].uv[i*6+start*6/9];
         memcpy(&tris[0],&objects[which].vert[start+i*9],sizeof(float)*9);
 
-        rot_3d(tris[0],tris[1],tris[2], objects[which].trans[3],objects[which].trans[5],objects[which].trans[4]);
-        rot_3d(tris[3],tris[4],tris[5], objects[which].trans[3],objects[which].trans[5],objects[which].trans[4]);
-        rot_3d(tris[6],tris[7],tris[8], objects[which].trans[3],objects[which].trans[5],objects[which].trans[4]);
+        rotate_3d(tris[0],tris[1],tris[2], objects[which].trans[3],objects[which].trans[5],objects[which].trans[4]);
+        rotate_3d(tris[3],tris[4],tris[5], objects[which].trans[3],objects[which].trans[5],objects[which].trans[4]);
+        rotate_3d(tris[6],tris[7],tris[8], objects[which].trans[3],objects[which].trans[5],objects[which].trans[4]);
 
         tris[0]  +=  objects[which].trans[6]-cam.data[3];
         tris[1]  +=  objects[which].trans[7]-cam.data[4];
@@ -92,9 +89,9 @@ inline void render_tris(const int tris_amount, const int start,int which,float* 
         tris[7]  +=  objects[which].trans[7]-cam.data[4];
         tris[8]  +=  objects[which].trans[8]-cam.data[5];
 
-        rot_3d(tris[0],tris[1],tris[2], cam.data[0],cam.data[1],cam.data[2]);
-        rot_3d(tris[3],tris[4],tris[5], cam.data[0],cam.data[1],cam.data[2]);
-        rot_3d(tris[6],tris[7],tris[8], cam.data[0],cam.data[1],cam.data[2]);
+        rotate_3d(tris[0],tris[1],tris[2], cam.data[0],cam.data[1],cam.data[2]);
+        rotate_3d(tris[3],tris[4],tris[5], cam.data[0],cam.data[1],cam.data[2]);
+        rotate_3d(tris[6],tris[7],tris[8], cam.data[0],cam.data[1],cam.data[2]);
 
         if (cull(cam,tris)) {
 
@@ -104,8 +101,11 @@ inline void render_tris(const int tris_amount, const int start,int which,float* 
 
         //per triangle depth calc
         float Nvec[3];
-        cross_prod(tris[0]-tris[6],tris[1]-tris[7],tris[2]-tris[8],
-                   tris[0]-tris[3],tris[1]-tris[4],tris[2]-tris[5],Nvec);
+        crossproduct(tris[3]-tris[0],tris[4]-tris[1],tris[5]-tris[2],
+                     tris[6]-tris[0],tris[7]-tris[1],tris[8]-tris[2],
+                     Nvec);
+
+        if(cull_backface(Nvec,tris)){
 
         float Npoint[3]= {tris[0], tris[1], tris[2]};
 
@@ -130,11 +130,11 @@ inline void render_tris(const int tris_amount, const int start,int which,float* 
                 float nx = (x / (float)cam.data[6]) * 2 - 1;
 
                 // Check if pixel is inside the triangle
-                if (in_trig_barricentric(nx, ny, tris,w1,w2)) {
+                if (is_point_in_triangle(nx, ny, tris,w1,w2)) {
 
                     int pixel_index = x + y * cam.data[6];
                     Gvec[0]=nx;Gvec[1]=cam.data[8];Gvec[2]=ny;
-                    inter_pl_str(Nvec,Npoint,Gvec,intersect);
+                    intersection_plane_straight(Nvec,Npoint,Gvec,intersect);
                     float temp=sqrt(intersect[0]*intersect[0]+intersect[1]*intersect[1]+intersect[2]*intersect[2]);
 
                     if (pixel_index >= 0 && pixel_index < scr_size&&temp<depth_buffer[pixel_index]) {
@@ -148,12 +148,12 @@ inline void render_tris(const int tris_amount, const int start,int which,float* 
                 }
             }
         }
-    }
+    }}
 }
 }
 
 //hyperthread the rendering
-inline void render_tris_acell(int o) {
+inline void rasterise_tris_multithreaded(int o) {
 
     timer_render = std::chrono::high_resolution_clock::now();
 
@@ -175,9 +175,9 @@ inline void render_tris_acell(int o) {
             std::fill(depth_buffs[i].begin(), depth_buffs[i].end(), INFINITY);
             std::fill(colour_buffs[i].begin(), colour_buffs[i].end(), 216);
 
-            thread_pool.emplace_back(render_tris, tris_per_thread, tris_per_thread * 9 * i,o,&depth_buffs[i][0],&colour_buffs[i][0]);
+            thread_pool.emplace_back(rasterise_tris, tris_per_thread, tris_per_thread * 9 * i,o,&depth_buffs[i][0],&colour_buffs[i][0]);
         }
-        render_tris(overflow_tris,tris_per_thread*thread_numb*9,o,depth_buffer,colour_buffer);
+        rasterise_tris(overflow_tris,tris_per_thread*thread_numb*9,o,depth_buffer,colour_buffer);
         // Wait for completion
         for (int i=0;i<thread_numb;i++){
             thread_pool[i].join();

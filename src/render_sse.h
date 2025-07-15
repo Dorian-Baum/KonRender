@@ -95,15 +95,24 @@ inline void rot_3d(__m128& X, __m128& Y, __m128& Z, const float ax, const float 
 }
 
 //sse culling
-__m128 cull(__m128 fov, __m128 ay, __m128 by, __m128 cy) {
+inline __m128 cull(__m128 fov, __m128 ay, __m128 by, __m128 cy) {
     // Compute mask (all F's for true, 0 for false)
     __m128 mask = _mm_and_ps(_mm_and_ps(_mm_cmpgt_ps(ay, fov),_mm_cmpgt_ps(by, fov)),_mm_cmpgt_ps(cy, fov));
 
     // Convert mask to 1.0f (true) or 0.0f (false)
     return _mm_and_ps(mask, _mm_set1_ps(1.0f));
 }
+
+inline __m128 cull_backface(__m128 nvec_x, __m128 nvec_y ,__m128 nvec_z, __m128 ax, __m128 ay, __m128 az) {
+    // Compute mask (all F's for true, 0 for false)
+    __m128 mask = _mm_cmpgt_ps(_mm_add_ps(_mm_mul_ps(nvec_x,ax),_mm_add_ps(_mm_mul_ps(nvec_y,ay),_mm_mul_ps(nvec_z,az))),_mm_set1_ps(0));
+
+    // Convert mask to 1.0f (true) or 0.0f (false)
+    return _mm_and_ps(mask, _mm_set1_ps(1.0f));
+}
+
 //sse render triangles
-inline void render_tris_sse(int tris_amount, int start, int which, float* depth_buffer,int* colour_buffer) {
+inline void rasterise_tris_sse(int tris_amount, int start, int which, float* depth_buffer,int* colour_buffer) {
 
     int colour[3];
     int scr_size = cam.data[6]*cam.data[7];
@@ -218,13 +227,28 @@ inline void render_tris_sse(int tris_amount, int start, int which, float* depth_
 
 
         __m128 Nvec_x;__m128 Nvec_y;__m128 Nvec_z;
-        __m128 Npoint_x = ax;  // Using first vertex of each triangle
-        __m128 Npoint_y = ay;
-        __m128 Npoint_z = az;
 
         cross_prod(_mm_sub_ps(ax,cx),_mm_sub_ps(ay,cy),_mm_sub_ps(az,cz),
                    _mm_sub_ps(ax,bx),_mm_sub_ps(ay,by),_mm_sub_ps(az,bz),
                    Nvec_x,Nvec_y,Nvec_z);
+
+        culling= cull_backface(Nvec_x,Nvec_y,Nvec_z,ax,ay,az);
+
+        ax=_mm_mul_ps(ax,culling);
+        ay=_mm_mul_ps(ay,culling);
+        az=_mm_mul_ps(az,culling);
+
+        bx=_mm_mul_ps(bx,culling);
+        by=_mm_mul_ps(by,culling);
+        bz=_mm_mul_ps(bz,culling);
+
+        cx=_mm_mul_ps(cx,culling);
+        cy=_mm_mul_ps(cy,culling);
+        cz=_mm_mul_ps(cz,culling);
+
+        __m128 Npoint_x = ax;  // Using first vertex of each triangle
+        __m128 Npoint_y = ay;
+        __m128 Npoint_z = az;
 
         ay = _mm_mul_ps(ay,cam_fov);
         by = _mm_mul_ps(by,cam_fov);
@@ -266,12 +290,12 @@ inline void render_tris_sse(int tris_amount, int start, int which, float* depth_
                 float nx = (x / (float)cam.data[6]) * 2 - 1;
 
                 // Check if pixel is inside the triangle
-                if (in_trig_barricentric(nx, ny, &tris[a*9], w1, w2)) {
+                if (is_point_in_triangle(nx, ny, &tris[a*9], w1, w2)) {
 
                     int pixel_index = x + y * cam.data[6];
                     float Gvec[3]; Gvec[0]=nx;Gvec[1]=cam.data[8];Gvec[2]=ny;
                     float intersect[3];
-                    inter_pl_str(Nvec[a],Npoint[a],Gvec,intersect);
+                    intersection_plane_straight(Nvec[a],Npoint[a],Gvec,intersect);
                     float temp=sqrt(intersect[0]*intersect[0]+intersect[1]*intersect[1]+intersect[2]*intersect[2]);
 
                     if (pixel_index >= 0 && pixel_index < scr_size&&temp<depth_buffer[pixel_index]) {
@@ -290,7 +314,7 @@ inline void render_tris_sse(int tris_amount, int start, int which, float* depth_
 
 //mulit threaded sse rendering
 //hyperthread the rendering
-inline void render_tris_acell_sse(int o) {
+inline void rasterise_tris_multithreaded_sse(int o) {
 
     timer_render = std::chrono::high_resolution_clock::now();
 
@@ -312,10 +336,9 @@ inline void render_tris_acell_sse(int o) {
             std::fill(depth_buffs[i].begin(), depth_buffs[i].end(), INFINITY);
             std::fill(colour_buffs[i].begin(), colour_buffs[i].end(), 216);
 
-            thread_pool.emplace_back(render_tris_sse, tris_per_thread, tris_per_thread * 9 * i,o,&depth_buffs[i][0],&colour_buffs[i][0]);
+            thread_pool.emplace_back(rasterise_tris_sse, tris_per_thread, tris_per_thread * 9 * i,o,&depth_buffs[i][0],&colour_buffs[i][0]);
         }
-
-        render_tris(overflow_tris,tris_per_thread*thread_numb*9,o,depth_buffer,colour_buffer);
+        rasterise_tris(overflow_tris,objects[o].vert.size()/9-overflow_tris,o,depth_buffer,colour_buffer);
 
         // Wait for completion
         for (int i=0;i<thread_numb;i++){

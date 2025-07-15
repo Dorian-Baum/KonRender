@@ -32,5 +32,14 @@ struct texture {
     int dim_x,dim_y;
 };
 
+struct point_light{
+    //position
+    float x=0;float y=0;float z=0;
+    //strength
+    float intensity=100000;
+    //colour
+    float r=255;float g=255;float b=255;
+};
+
 
 #endif // DATA-STRUCTURES_H_INCLUDED

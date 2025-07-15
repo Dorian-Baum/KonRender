@@ -5,5 +5,6 @@
 
 #include "import.h"
 
+#include "lighting.h"
 
 #endif // KONHEADER_H_INCLUDED

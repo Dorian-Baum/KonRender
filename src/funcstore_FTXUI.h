@@ -2,6 +2,7 @@
 #define FUNCSTORE_MUTUAL_H_INCLUDED
 
 #include "global.h"
+#include "KonMath.h"
 
 #include <boost/geometry.hpp>
 #include <boost/algorithm/clamp.hpp>
@@ -16,40 +17,13 @@ inline void draw_pixel(int x,int y,char letter,
             pixel.background_color = ftxui::Color::RGB(background_r,background_g,background_b);
 }
 
-
-// 2D Rotation
-inline void rot_2d(float& X, float& Y, const float angle) {
-    float coa = cos(angle);float sia=sin(angle);
-    float temp = X * coa- Y * sia;
-    Y = X * sia + Y * coa;
-    X = temp;
-}
-// 3D Rotiation
-inline void rot_3d(float& X, float& Y, float& Z, const float ax, const float ay, const float az) {
-
-    float coa = cos(az);float sia=sin(az);
-    float temp = X * coa- Y * sia;
-    Y = X * sia + Y * coa;
-    X = temp;
-
-    coa = cos(ay); sia=sin(ay);
-    X = temp * coa- Z * sia;
-    Z = temp * sia + Z * coa;
-
-    coa = cos(ax); sia=sin(ax);
-    temp = Y * coa-Z * sia;
-    Z = Y * sia + Z * coa;
-    Y = temp;
-}
-
-//print screen from colour buffer
 //print screen from colour buffer
 inline void draw_screen() {
     timer_blit = std::chrono::high_resolution_clock::now();
     for (int y=0;y<cam.data[7];y++){
         for (int x=0;x<cam.data[6];x++){
         auto& pixel = screen.PixelAt(x, y);
-            pixel.background_color = ftxui::Color::RGB(colour_buffer[(int)(x+y*cam.data[6])*3]/colour_clamper*colour_clamper,
+            pixel.background_color = ftxui::Color::RGB(colour_buffer[(int)(x+y*cam.data[6])*3  ]/colour_clamper*colour_clamper,
                                                        colour_buffer[(int)(x+y*cam.data[6])*3+1]/colour_clamper*colour_clamper,
                                                        colour_buffer[(int)(x+y*cam.data[6])*3+2]/colour_clamper*colour_clamper);
     }}
@@ -69,9 +43,9 @@ inline void draw_texture(int which) {
             auto& pixel = screen.PixelAt(ax, ay);
             pixel.character = ' ';
             pixel.foreground_color = ftxui::Color::White;
-            pixel.background_color = ftxui::Color::RGB(colour_buffer[(int)(x+y*cam.data[6])*3]/colour_clamper*colour_clamper,
-                                                       colour_buffer[(int)(x+y*cam.data[6])*3+1]/colour_clamper*colour_clamper,
-                                                       colour_buffer[(int)(x+y*cam.data[6])*3+2]/colour_clamper*colour_clamper);
+            pixel.background_color = ftxui::Color::RGB(textures[which].texture[(y*textures[which].dim_x+x)*3  ]/colour_clamper*colour_clamper,
+                                                       textures[which].texture[(y*textures[which].dim_x+x)*3+1]/colour_clamper*colour_clamper,
+                                                       textures[which].texture[(y*textures[which].dim_x+x)*3+2]/colour_clamper*colour_clamper);
 
         }
     }
@@ -86,7 +60,7 @@ inline void controls(){
     tempX+=key_state[SDL_SCANCODE_D]-key_state[SDL_SCANCODE_A];
     tempY+=key_state[SDL_SCANCODE_W]-key_state[SDL_SCANCODE_S];
 
-    rot_2d(tempX,tempY,-cam.data[2]);
+    rotate_2d(tempX,tempY,-cam.data[2]);
 
     cam.data[5] += mv_speed*(key_state[SDL_SCANCODE_LSHIFT]-key_state[SDL_SCANCODE_SPACE]);
     cam.data[3] += tempX*mv_speed;
@@ -109,7 +83,7 @@ inline void controls(){
     }
 }
 
-//just like the youtube setting, it show useful information invoked with f3 (not usable with ncurses-controls)
+//just like the youtube setting, it show useful information invoked with f3
 inline void stats_4nerds(){
 if(settings[2]){
         float temporary=0;
@@ -151,7 +125,7 @@ if(settings[2]){
 }
 
 //initalise things needed for the library
-inline void innit_3d(){
+inline void innit_konrender(){
     depth_buffs.resize(thread_numb);
     colour_buffs.resize(thread_numb);
 if (settings[0]){
@@ -187,29 +161,37 @@ inline void begin_frame(){
             // Add null checks before freeing
             if (depth_buffer) free(depth_buffer);
             if (colour_buffer) free(colour_buffer);
+            if (light_buffer) free(light_buffer);
 
             cam.data[6] = screen.dimx();
             cam.data[7] = screen.dimy();
 
             depth_buffer = (float*)malloc(cam.data[6] * cam.data[7] * sizeof(float));
+            light_buffer = (float*)malloc(cam.data[6] * cam.data[7] * sizeof(float));
             colour_buffer = (int*)malloc(3*cam.data[6] * cam.data[7] * sizeof(int));
 
             winsize_change = true;
         }
         std::fill_n(depth_buffer, cam.data[6] * cam.data[7], INFINITY);
+        std::fill_n(light_buffer, cam.data[6] * cam.data[7], NAN);
         std::fill_n(colour_buffer, 3*cam.data[6] * cam.data[7], 0);
 }
 
+inline void blit_screen(ftxui::Screen screen){
+    timer_blit = std::chrono::high_resolution_clock::now();
+    //blit screen
+    std::cout << "\033[H";
+    screen.Print();
+    frametime_blit[delta%10] += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - timer_blit).count();
+}
+
 //called at the end of every frame
-//Makes ncurses print, creates avg framerate, sleeps and updates delta
+//Makes FTXUI print, creates avg framerate, sleeps and updates delta
 inline void end_frame(){
 
-        timer_render = std::chrono::high_resolution_clock::now();
-        //blit screen
-        std::cout << "\033[H";
-        screen.Print();
+        screen_buffered=screen;
 
-        frametime_blit[delta%10] += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - timer_blit).count();
+        timer_render = std::chrono::high_resolution_clock::now();
 
         delta++;
 
